@@ -194,6 +194,16 @@ func fromSimpleType(desc *field.Descriptor) (*ast.CallExpr, error) {
 		}
 		builder.method("Default", expr)
 	}
+	if desc.Info.RType != nil {
+		ident := desc.Info.RType.Ident
+		if desc.Info.RType.IsPtr() {
+			ident = "&" + ident
+		}
+		builder.method("GoType", structLit(
+			ast.NewIdent(ident),
+		))
+	}
+
 	// Unsupported features
 	var unsupported error
 	if len(desc.Validators) != 0 {

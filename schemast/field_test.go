@@ -16,6 +16,7 @@ package schemast
 
 import (
 	"bytes"
+	"database/sql"
 	"go/printer"
 	"go/token"
 	"testing"
@@ -152,6 +153,16 @@ func TestFromFieldDescriptor(t *testing.T) {
 			name:     "uuid",
 			field:    field.UUID("x", uuid.UUID{}),
 			expected: `field.UUID("x", uuid.UUID{})`,
+		},
+		{
+			name:     "go type",
+			field:    field.String("x").GoType(sql.NullString{}),
+			expected: `field.String("x").GoType(sql.NullString{})`,
+		},
+		{
+			name:     "go type ptr",
+			field:    field.String("x").GoType(&sql.NullString{}),
+			expected: `field.String("x").GoType(&sql.NullString{})`,
 		},
 	}
 

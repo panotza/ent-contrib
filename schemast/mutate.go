@@ -62,8 +62,11 @@ func (u *UpsertSchema) Mutate(ctx *Context) error {
 		if err := ctx.AppendField(u.Name, fld.Descriptor()); err != nil {
 			return err
 		}
-		if fld.Descriptor().Info.Type == field.TypeUUID {
+		d := fld.Descriptor()
+		if d.Info.Type == field.TypeUUID {
 			ctx.appendImport(u.Name, "github.com/google/uuid")
+		} else if d.Info.RType != nil {
+			ctx.appendImport(u.Name, d.Info.RType.PkgPath)
 		}
 	}
 	for _, edg := range u.Edges {
