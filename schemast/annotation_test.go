@@ -23,6 +23,7 @@ import (
 	"entgo.io/contrib/entproto"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/field"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -141,6 +142,12 @@ func TestAnnotation(t *testing.T) {
 			},
 			expectedOk:     false,
 			expectedErrMsg: `schemast: unknown entsql ReferenceOption: "UNSUPPORTED"`,
+		},
+		{
+			name:       "field ID",
+			annot:      field.ID("first", "second", "third"),
+			expectedOk: true,
+			expected:   `field.ID("first", "second", "third")`,
 		},
 		{
 			name:           "unsupported annotation",

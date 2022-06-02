@@ -22,6 +22,7 @@ import (
 	"entgo.io/contrib/entproto"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/field"
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -43,11 +44,12 @@ type Annotator func(schema.Annotation) (ast.Expr, bool, error)
 // invokes that Annotator if found.
 func Annotation(annot schema.Annotation) (ast.Expr, bool, error) {
 	annotators := map[string]Annotator{
-		entproto.MessageAnnotation: protoMsg,
-		entproto.ServiceAnnotation: protoSvc,
-		entproto.FieldAnnotation:   protoField,
-		entproto.EnumAnnotation:    protoEnum,
-		"EntSQL":                   entSQL,
+		entproto.MessageAnnotation:   protoMsg,
+		entproto.ServiceAnnotation:   protoSvc,
+		entproto.FieldAnnotation:     protoField,
+		entproto.EnumAnnotation:      protoEnum,
+		"EntSQL":                     entSQL,
+		new(field.Annotation).Name(): fields,
 	}
 	fn, ok := annotators[annot.Name()]
 	if !ok {
@@ -183,6 +185,22 @@ func entSQL(annot schema.Annotation) (ast.Expr, bool, error) {
 		}
 	}
 	// TODO(rotemtam): support m.Incremental (it is a *bool)
+	return c, true, nil
+}
+
+func fields(annot schema.Annotation) (ast.Expr, bool, error) {
+	var m struct {
+		ID []string
+	}
+	if err := mapstructure.Decode(annot, &m); err != nil {
+		return nil, false, err
+	}
+
+	callArgs := make([]ast.Expr, len(m.ID))
+	for i := range m.ID {
+		callArgs[i] = strLit(m.ID[i])
+	}
+	c := fnCall(selectorLit("field", "ID"), callArgs...)
 	return c, true, nil
 }
 
