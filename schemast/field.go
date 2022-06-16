@@ -33,7 +33,22 @@ import (
 func Field(desc *field.Descriptor) (*ast.CallExpr, error) {
 	switch t := desc.Info.Type; {
 	case t.Numeric(), t == field.TypeString, t == field.TypeBool, t == field.TypeTime, t == field.TypeBytes:
-		return fromSimpleType(desc)
+		exp, err := fromSimpleType(desc)
+		if err != nil {
+			return nil, err
+		}
+		if desc.Info.RType != nil {
+			ident := desc.Info.RType.Ident
+			if desc.Info.RType.IsPtr() {
+				ident = "&" + ident
+			}
+			b := builderCall{curr: exp}
+			b.method("GoType", structLit(
+				ast.NewIdent(ident),
+			))
+			exp = b.curr
+		}
+		return exp, nil
 	case t == field.TypeUUID:
 		return fromComplexType(
 			desc,
@@ -193,15 +208,6 @@ func fromSimpleType(desc *field.Descriptor) (*ast.CallExpr, error) {
 			return nil, err
 		}
 		builder.method("Default", expr)
-	}
-	if desc.Info.RType != nil {
-		ident := desc.Info.RType.Ident
-		if desc.Info.RType.IsPtr() {
-			ident = "&" + ident
-		}
-		builder.method("GoType", structLit(
-			ast.NewIdent(ident),
-		))
 	}
 
 	// Unsupported features
